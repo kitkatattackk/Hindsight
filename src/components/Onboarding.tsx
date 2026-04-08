@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronRight, 
@@ -39,14 +39,16 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       categories,
       hasCompletedOnboarding: true,
       mollyExpression,
-      mollyColor
+      mollyColor,
+      notificationsEnabled: false,
+      categoryReminders: []
     });
   };
 
   const expressions: MollyExpression[] = ['neutral', 'happy', 'surprised', 'thinking', 'sleepy'];
   const colors = ['#FDEE88', '#F310F6', '#4C22ED', '#FF5733', '#00D1FF', '#7CFF01'];
 
-  const steps = [
+  const steps = useMemo(() => [
     {
       title: "Welcome to Hindsight",
       content: (
@@ -54,45 +56,62 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <div className="relative flex justify-center py-8">
             {/* Custom Molly Animation for Onboarding */}
             <motion.div
-              initial={{ scale: 0, rotate: -180, opacity: 0 }}
-              animate={{ 
-                scale: [0, 1.2, 1], 
-                rotate: [-180, 10, 0], 
-                opacity: 1,
-                y: [0, -10, 0]
-              }}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               transition={{ 
-                duration: 1.5, 
-                times: [0, 0.7, 1],
-                y: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+                duration: 0.8, 
+                ease: "easeOut"
               }}
             >
-              <MollyCharacter size={160} expression="surprised" />
+              <MollyCharacter 
+                size={160} 
+                expression={name.length > 0 ? "happy" : "surprised"} 
+              />
             </motion.div>
             
             {/* Portal Effect */}
             <motion.div 
               initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 0.2 }}
+              animate={{ scale: 1, opacity: 0.15 }}
               className="absolute inset-0 bg-brand-purple rounded-full blur-3xl -z-10"
+              transition={{ duration: 1 }}
             />
           </div>
           <div className="space-y-2">
-            <h2 className="text-4xl font-display text-brand-purple">I'm Molly.</h2>
-            <p className="text-black/60 text-lg">
+            <motion.h2 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-4xl font-display text-brand-purple"
+            >
+              I'm Molly.
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="text-black/60 text-lg"
+            >
               I'm here to help you navigate your regrets and turn them into wisdom.
-            </p>
+            </motion.p>
           </div>
-          <div className="pt-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.7 }}
+            className="pt-4"
+          >
             <input 
               type="text"
               placeholder="What should I call you?"
               className="retro-input w-full max-w-xs text-center text-xl"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+              }}
               autoFocus
             />
-          </div>
+          </motion.div>
         </div>
       )
     },
@@ -221,12 +240,17 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <div className="flex justify-center">
             <motion.div
               animate={{ 
-                y: [0, -20, 0],
-                scale: [1, 1.2, 1]
+                y: [0, -15, 0],
+                rotate: [0, 5, -5, 0],
+                scale: [1, 1.1, 1]
               }}
-              transition={{ duration: 2, repeat: Infinity }}
+              transition={{ 
+                duration: 3, 
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
             >
-              <MollyCharacter size={140} expression="surprised" />
+              <MollyCharacter size={140} expression="happy" />
             </motion.div>
           </div>
           <div className="space-y-2">
@@ -235,16 +259,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               Hindsight is 20/20, but with a little reflection, the future is even clearer.
             </p>
           </div>
-          <div className="bg-brand-yellow/20 p-6 rounded-3xl border-4 border-black border-dashed relative overflow-hidden">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="bg-brand-yellow/20 p-6 rounded-3xl border-4 border-black border-dashed relative overflow-hidden"
+          >
             <Sparkles className="absolute -top-2 -right-2 w-8 h-8 text-brand-yellow animate-pulse" />
             <p className="font-display text-xl text-brand-purple">
               "Don't let yesterday take up too much of today."
             </p>
-          </div>
+          </motion.div>
         </div>
       )
     }
-  ];
+  ], [name, mollyExpression, mollyColor, notificationTime, categories]);
 
   return (
     <div className="absolute inset-0 z-[200] bg-white flex flex-col items-center justify-center p-4 overflow-hidden">
@@ -275,10 +304,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -50, opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              initial={{ x: 20, opacity: 0, scale: 0.95 }}
+              animate={{ x: 0, opacity: 1, scale: 1 }}
+              exit={{ x: -20, opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4, ease: "anticipate" }}
             >
               {steps[step - 1].content}
             </motion.div>

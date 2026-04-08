@@ -20,6 +20,22 @@ export interface DayLog {
   decisions: Decision[];
 }
 
+export interface CategoryReminder {
+  id: string;
+  categoryId: string;
+  time: string;
+  enabled: boolean;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Lucide icon name
+  color: string;
+  earnedAt?: number;
+}
+
 export interface UserProfile {
   name: string;
   notificationTime: string; // e.g. "21:00"
@@ -27,4 +43,6 @@ export interface UserProfile {
   hasCompletedOnboarding: boolean;
   mollyExpression: MollyExpression;
   mollyColor: string;
+  notificationsEnabled: boolean;
+  categoryReminders: CategoryReminder[];
 }

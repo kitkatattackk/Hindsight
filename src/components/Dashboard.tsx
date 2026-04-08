@@ -14,7 +14,10 @@ import {
   Ghost,
   Moon,
   Sun,
-  LayoutDashboard
+  LayoutDashboard,
+  CheckCircle2,
+  Activity,
+  Award
 } from 'lucide-react';
 import { 
   AreaChart,
@@ -33,6 +36,8 @@ import { format, parseISO, startOfWeek, endOfWeek, eachDayOfInterval, subDays, s
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import MollyCharacter from './MollyCharacter';
+import RegretMapping from './RegretMapping';
+import WisdomBadges from './WisdomBadges';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -129,6 +134,7 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
   };
 
   const streak = calculateStreak();
+  const isCheckInCompleteToday = logs.some(l => l.date === format(new Date(), 'yyyy-MM-dd'));
 
   // Calculate insights
   const insights = React.useMemo(() => {
@@ -225,22 +231,66 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
           <p className="text-sm sm:text-base text-black/60">Your emotional patterns at a glance.</p>
         </div>
         
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="flex items-center gap-3 bg-white border-4 border-black p-3 rounded-2xl shadow-retro-sm self-start md:self-auto"
-        >
-          <div className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center border-2 border-black",
-            streak > 0 ? "bg-brand-yellow" : "bg-gray-100"
-          )}>
-            <Flame className={cn("w-6 h-6", streak > 0 ? "text-orange-500" : "text-gray-400")} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none">Current Streak</p>
-            <p className="text-xl font-display leading-tight">{streak} {streak === 1 ? 'Day' : 'Days'}</p>
-          </div>
-        </motion.div>
+        <div className="flex items-stretch gap-3 w-full md:w-auto">
+          {/* Today's Status */}
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={cn(
+              "flex-1 flex items-center gap-3 border-4 border-black p-3 rounded-2xl shadow-retro-sm transition-colors relative overflow-hidden",
+              isCheckInCompleteToday ? "bg-brand-yellow" : "bg-white"
+            )}
+          >
+            {isCheckInCompleteToday && (
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: '250%' }}
+                transition={{ 
+                  repeat: Infinity, 
+                  duration: 2, 
+                  ease: "linear",
+                  repeatDelay: 3
+                }}
+                className="absolute inset-0 z-0 pointer-events-none bg-gradient-to-r from-transparent via-white/60 to-transparent -skew-x-12"
+              />
+            )}
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center border-2 border-black shrink-0 relative z-10",
+              isCheckInCompleteToday ? "bg-white" : "bg-gray-100"
+            )}>
+              {isCheckInCompleteToday ? (
+                <CheckCircle2 className="w-6 h-6 text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+              ) : (
+                <Sparkles className="w-6 h-6 text-brand-purple animate-pulse" />
+              )}
+            </div>
+            <div className="min-w-0 relative z-10">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none truncate">Today's Ritual</p>
+              <p className="text-sm font-display leading-tight truncate">
+                {isCheckInCompleteToday ? 'Complete!' : 'Pending'}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Streak */}
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="flex-1 flex items-center gap-3 bg-white border-4 border-black p-3 rounded-2xl shadow-retro-sm"
+          >
+            <div className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center border-2 border-black shrink-0",
+              streak > 0 ? "bg-brand-yellow" : "bg-gray-100"
+            )}>
+              <Flame className={cn("w-6 h-6", streak > 0 ? "text-orange-500" : "text-gray-400")} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none truncate">Current Streak</p>
+              <p className="text-xl font-display leading-tight truncate">{streak} {streak === 1 ? 'Day' : 'Days'}</p>
+            </div>
+          </motion.div>
+        </div>
       </div>
       
       {/* Nudge Section */}
@@ -340,7 +390,7 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={categoryData} layout="vertical" margin={{ left: -20, right: 20 }}>
                   <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={80} tick={{ fontSize: 10 }} />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={100} tick={{ fontSize: 10 }} />
                   <Tooltip 
                     cursor={{ fill: 'transparent' }}
                     contentStyle={{ 
@@ -369,6 +419,62 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
           </div>
         </div>
       </div>
+
+      {/* Regret Mapping (D3) */}
+      <section className="space-y-4">
+        <div className="retro-card bg-white min-h-[500px] flex flex-col p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl md:text-2xl font-display flex items-center gap-2">
+              <Activity className="w-6 h-6 text-brand-purple" />
+              Regret Intensity Mapping
+            </h3>
+            <span className="text-[10px] font-bold bg-black text-white px-2 py-1 rounded uppercase tracking-widest opacity-50">D3 Engine</span>
+          </div>
+          
+          <div className="flex flex-col md:flex-row gap-8 flex-1">
+            <div className="flex-1">
+              {logs.length > 0 ? (
+                <RegretMapping logs={logs} />
+              ) : (
+                <EmptyStateIllustration 
+                  icon={BrainCircuit}
+                  title="Mapping the Mind"
+                  description="This D3-powered chart will visualize which life categories carry the heaviest emotional weight."
+                  colorClass="bg-brand-purple/10"
+                />
+              )}
+            </div>
+            <div className="md:w-1/3 space-y-4 flex flex-col justify-center">
+              <div className="p-4 bg-brand-yellow/20 rounded-xl border-2 border-black border-dashed">
+                <p className="text-xs font-bold uppercase tracking-wider text-black/60 mb-1">What is this?</p>
+                <p className="text-sm leading-relaxed">
+                  This chart maps the <strong>average emotional intensity</strong> of your regrets across different life categories. 
+                </p>
+              </div>
+              <div className="p-4 bg-brand-pink/10 rounded-xl border-2 border-black border-dashed">
+                <p className="text-xs font-bold uppercase tracking-wider text-black/60 mb-1">Why it matters</p>
+                <p className="text-sm leading-relaxed">
+                  High intensity in a specific category often signals a <strong>misalignment</strong> with your core values.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Wisdom Badges */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-2xl font-display flex items-center gap-2">
+            <Award className="w-6 h-6 text-brand-yellow" />
+            Wisdom Badges
+          </h3>
+          <span className="text-xs font-bold bg-black text-white px-2 py-1 rounded uppercase tracking-widest opacity-50">Achievements</span>
+        </div>
+        <div className="retro-card bg-brand-purple/5 p-6 border-dashed">
+          <WisdomBadges logs={logs} />
+        </div>
+      </section>
 
       {/* Pattern Cards */}
       <section className="space-y-4">

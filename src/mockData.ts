@@ -43,5 +43,7 @@ export const mockUser: UserProfile = {
   categories: categories,
   hasCompletedOnboarding: false,
   mollyExpression: 'neutral',
-  mollyColor: '#FDEE88'
+  mollyColor: '#FDEE88',
+  notificationsEnabled: false,
+  categoryReminders: []
 };

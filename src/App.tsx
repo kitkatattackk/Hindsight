@@ -24,10 +24,18 @@ function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+import { NotificationService } from './services/notificationService';
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [logs, setLogs] = useState<DayLog[]>(mockLogs);
-  const [user, setUser] = useState<UserProfile>(mockUser);
+  const [logs, setLogs] = useState<DayLog[]>(() => {
+    const saved = localStorage.getItem('hindsight_logs');
+    return saved ? JSON.parse(saved) : mockLogs;
+  });
+  const [user, setUser] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem('hindsight_user');
+    return saved ? JSON.parse(saved) : mockUser;
+  });
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
 
   const tabs = [
@@ -36,14 +44,12 @@ export default function App() {
     { id: 'settings', label: 'Settings', icon: SettingsIcon },
   ];
 
-  // Simulate loading state or initial data fetch
+  // Handle side effects like service worker registration
   useEffect(() => {
-    const savedLogs = localStorage.getItem('hindsight_logs');
-    const savedUser = localStorage.getItem('hindsight_user');
-    
-    if (savedLogs) setLogs(JSON.parse(savedLogs));
-    if (savedUser) setUser(JSON.parse(savedUser));
-  }, []);
+    if (user.notificationsEnabled) {
+      NotificationService.registerServiceWorker();
+    }
+  }, [user.notificationsEnabled]);
 
   const handleSaveLog = (newLog: DayLog) => {
     const updatedLogs = [newLog, ...logs];
@@ -68,7 +74,7 @@ export default function App() {
     <MobileShell>
       <ErrorBoundary>
         {!user.hasCompletedOnboarding ? (
-          <Onboarding onComplete={handleUpdateUser} />
+          <Onboarding key="onboarding-screen" onComplete={handleUpdateUser} />
         ) : (
           <Layout 
             onCheckIn={() => setIsCheckInOpen(true)}
