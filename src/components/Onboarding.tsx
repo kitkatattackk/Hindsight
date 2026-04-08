@@ -247,7 +247,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   ];
 
   return (
-    <div className="fixed inset-0 z-[200] bg-white flex flex-col items-center justify-center p-4 overflow-hidden">
+    <div className="absolute inset-0 z-[200] bg-white flex flex-col items-center justify-center p-4 overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-purple/5 rounded-full blur-[100px]" />

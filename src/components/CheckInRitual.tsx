@@ -118,13 +118,13 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center md:p-4 bg-brand-purple/40 backdrop-blur-md">
+    <div className="absolute inset-0 z-[100] flex items-center justify-center bg-brand-purple/40 backdrop-blur-md">
       <motion.div 
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="retro-card w-full h-full md:h-auto md:max-w-2xl bg-white relative overflow-hidden flex flex-col"
+        className="retro-card w-full h-full bg-white relative overflow-hidden flex flex-col"
       >
         {/* Progress Bar */}
         <div className="absolute top-0 left-0 w-full h-2 bg-gray-100 z-20">

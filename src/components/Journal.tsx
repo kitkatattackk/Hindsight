@@ -10,7 +10,9 @@ import {
   Tag, 
   Clock, 
   AlertCircle,
-  Edit2
+  Edit2,
+  Search,
+  X as XIcon
 } from 'lucide-react';
 import { DayLog, Category, Decision } from '../types';
 import { format, parseISO } from 'date-fns';
@@ -48,7 +50,29 @@ const CategoryBadge = ({ category }: { category: Category }) => {
 export default function Journal({ logs, onUpdateLog }: JournalProps) {
   const [editingDecisionId, setEditingDecisionId] = React.useState<string | null>(null);
   const [revisitValue, setRevisitValue] = React.useState('');
-  const sortedLogs = [...logs].sort((a, b) => b.date.localeCompare(a.date));
+  const [searchQuery, setSearchQuery] = React.useState('');
+
+  const filteredLogs = React.useMemo(() => {
+    if (!searchQuery.trim()) return logs;
+
+    const query = searchQuery.toLowerCase();
+    return logs.map(log => {
+      const matchingDecisions = log.decisions.filter(d => 
+        d.text.toLowerCase().includes(query) ||
+        d.category.toLowerCase().includes(query) ||
+        (d.note && d.note.toLowerCase().includes(query)) ||
+        (d.regretReason && d.regretReason.toLowerCase().includes(query)) ||
+        (d.revisitNote && d.revisitNote.toLowerCase().includes(query))
+      );
+
+      if (matchingDecisions.length > 0) {
+        return { ...log, decisions: matchingDecisions };
+      }
+      return null;
+    }).filter((log): log is DayLog => log !== null);
+  }, [logs, searchQuery]);
+
+  const sortedLogs = [...filteredLogs].sort((a, b) => b.date.localeCompare(a.date));
 
   const handleStartRevisit = (decision: Decision) => {
     setEditingDecisionId(decision.id);
@@ -66,16 +90,38 @@ export default function Journal({ logs, onUpdateLog }: JournalProps) {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-display">Your Reflection Log</h2>
-        <div className="flex items-center gap-2 text-sm text-black/60 font-mono">
-          <Calendar className="w-4 h-4" />
-          <span>{logs.length} entries</span>
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-3xl font-display">Your Reflection Log</h2>
+          <div className="flex items-center gap-2 text-sm text-black/60 font-mono">
+            <Calendar className="w-4 h-4" />
+            <span>{filteredLogs.length} entries</span>
+          </div>
+        </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/30" />
+          <input 
+            type="text"
+            placeholder="Search decisions, categories, or notes..."
+            className="retro-input w-full pl-10 pr-10 py-3"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <XIcon className="w-4 h-4 text-black/50" />
+            </button>
+          )}
         </div>
       </div>
 
       <div className="space-y-8">
-        {sortedLogs.map((log) => (
+        {sortedLogs.length > 0 ? (
+          sortedLogs.map((log) => (
           <motion.div
             key={log.id}
             initial={{ opacity: 0, x: -20 }}
@@ -193,7 +239,26 @@ export default function Journal({ logs, onUpdateLog }: JournalProps) {
               </div>
             </div>
           </motion.div>
-        ))}
+        ))
+      ) : (
+        <div className="retro-card border-dashed bg-gray-50 flex flex-col items-center justify-center py-12 text-center space-y-4">
+          <div className="w-16 h-16 bg-brand-purple/10 rounded-full flex items-center justify-center border-4 border-black border-dashed">
+            <Search className="w-8 h-8 text-brand-purple/40" />
+          </div>
+          <div className="space-y-1">
+            <p className="font-display text-xl">No matches found</p>
+            <p className="text-sm text-black/50 max-w-xs">
+              We couldn't find any reflections matching "{searchQuery}". Try a different keyword.
+            </p>
+          </div>
+          <button 
+            onClick={() => setSearchQuery('')}
+            className="text-brand-purple font-bold hover:underline"
+          >
+            Clear search
+          </button>
+        </div>
+      )}
       </div>
     </div>
   );
