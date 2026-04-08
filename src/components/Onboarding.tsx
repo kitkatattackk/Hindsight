@@ -165,15 +165,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       content: (
         <div className="space-y-6">
           <div className="flex justify-center">
-            <motion.div
-              animate={{ 
-                rotate: [0, 5, -5, 0],
-                scale: [1, 1.05, 1]
-              }}
-              transition={{ duration: 4, repeat: Infinity }}
-            >
-              <MollyCharacter size={100} expression="thinking" />
-            </motion.div>
+            <MollyCharacter size={100} expression="thinking" />
           </div>
           <div className="space-y-4 text-center">
             <h2 className="text-3xl font-display text-brand-purple">Reflect before rest.</h2>
@@ -238,20 +230,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       content: (
         <div className="space-y-8 text-center">
           <div className="flex justify-center">
-            <motion.div
-              animate={{ 
-                y: [0, -15, 0],
-                rotate: [0, 5, -5, 0],
-                scale: [1, 1.1, 1]
-              }}
-              transition={{ 
-                duration: 3, 
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              <MollyCharacter size={140} expression="happy" />
-            </motion.div>
+            <MollyCharacter size={140} expression="happy" />
           </div>
           <div className="space-y-2">
             <h2 className="text-4xl font-display text-brand-purple">You're all set!</h2>
@@ -304,10 +283,10 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
-              initial={{ x: 20, opacity: 0, scale: 0.95 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: -20, opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4, ease: "anticipate" }}
+              initial={{ x: 10, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -10, opacity: 0 }}
+              transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
             >
               {steps[step - 1].content}
             </motion.div>

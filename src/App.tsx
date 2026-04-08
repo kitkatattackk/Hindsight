@@ -14,7 +14,6 @@ import Onboarding from './components/Onboarding';
 import MobileShell from './components/MobileShell';
 import ErrorBoundary from './components/ErrorBoundary';
 import { DayLog, UserProfile } from './types';
-import { mockLogs, mockUser } from './mockData';
 
 import { LayoutDashboard, BookOpen, Settings as SettingsIcon } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
@@ -30,11 +29,25 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [logs, setLogs] = useState<DayLog[]>(() => {
     const saved = localStorage.getItem('hindsight_logs');
-    return saved ? JSON.parse(saved) : mockLogs;
+    return saved ? JSON.parse(saved) : [];
   });
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('hindsight_user');
-    return saved ? JSON.parse(saved) : mockUser;
+    const onboarded = localStorage.getItem('hindsight_onboarded') === '1';
+    const defaults = {
+      name: '',
+      notificationTime: '21:00',
+      categories: ['Work', 'Money', 'Relationships', 'Health', 'Impulse', 'Social'],
+      hasCompletedOnboarding: onboarded,
+      mollyExpression: 'neutral',
+      mollyColor: '#FDEE88',
+      notificationsEnabled: false,
+      categoryReminders: []
+    };
+    if (!saved) return defaults;
+    const parsed = JSON.parse(saved);
+    // onboarded flag wins — ensures reinstalls never re-show onboarding
+    return { ...parsed, hasCompletedOnboarding: parsed.hasCompletedOnboarding || onboarded };
   });
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
 
@@ -68,6 +81,9 @@ export default function App() {
   const handleUpdateUser = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('hindsight_user', JSON.stringify(updatedUser));
+    if (updatedUser.hasCompletedOnboarding) {
+      localStorage.setItem('hindsight_onboarded', '1');
+    }
   };
 
   return (

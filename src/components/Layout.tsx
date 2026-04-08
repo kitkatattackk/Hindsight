@@ -21,8 +21,8 @@ export default function Layout({ children, onCheckIn, user }: LayoutProps) {
     <div className="flex-1 flex flex-col relative h-full">
       {/* Decorative elements */}
       <div className="bg-grid absolute inset-0 pointer-events-none" />
-      <div className="absolute top-10 left-10 w-32 h-32 bg-brand-pink/20 rounded-full blur-3xl animate-pulse" />
-      <div className="absolute bottom-20 right-10 w-48 h-48 bg-brand-purple/10 rounded-full blur-3xl animate-pulse delay-700" />
+      <div className="absolute top-10 left-10 w-32 h-32 bg-brand-pink/20 rounded-full blur-3xl" />
+      <div className="absolute bottom-20 right-10 w-48 h-48 bg-brand-purple/10 rounded-full blur-3xl" />
       
       {/* Header */}
       <header className="relative z-10 p-4 flex justify-between items-center bg-brand-yellow/80 backdrop-blur-sm">

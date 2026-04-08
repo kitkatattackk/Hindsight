@@ -50,16 +50,10 @@ interface DashboardProps {
 
 const EmptyStateIllustration = ({ icon: Icon, title, description, colorClass }: { icon: any, title: string, description: string, colorClass: string }) => (
   <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-4">
-    <motion.div 
-      animate={{ 
-        y: [0, -10, 0],
-        rotate: [0, 5, -5, 0]
-      }}
-      transition={{ 
-        duration: 4, 
-        repeat: Infinity,
-        ease: "easeInOut" 
-      }}
+    <motion.div
+      animate={{ y: [0, -8, 0] }}
+      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      style={{ willChange: 'transform' }}
       className={cn("w-16 h-16 rounded-2xl flex items-center justify-center border-4 border-black shadow-retro-sm", colorClass)}
     >
       <Icon className="w-8 h-8 text-black" />

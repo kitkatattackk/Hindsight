@@ -118,12 +118,13 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
   };
 
   return (
-    <div className="absolute inset-0 z-[100] flex items-center justify-center bg-brand-purple/40 backdrop-blur-md">
-      <motion.div 
+    <div className="absolute inset-0 z-[100] flex items-center justify-center bg-brand-purple/40">
+      <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        transition={{ type: 'tween', ease: [0.25, 0.46, 0.45, 0.94], duration: 0.28 }}
+        style={{ willChange: 'transform' }}
         className="retro-card w-full h-full bg-white relative overflow-hidden flex flex-col"
       >
         {/* Progress Bar */}
@@ -147,9 +148,10 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
             {step === 1 && (
               <motion.div
                 key="step1"
-                initial={{ x: 20, opacity: 0 }}
+                initial={{ x: 10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
+                exit={{ x: -10, opacity: 0 }}
+                transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
                 className="space-y-8 text-center"
               >
                 <div className="space-y-2">
@@ -187,16 +189,18 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
             {step === 2 && (
               <motion.div
                 key="step2"
-                initial={{ x: 20, opacity: 0 }}
+                initial={{ x: 10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
+                exit={{ x: -10, opacity: 0 }}
+                transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
                 className="space-y-6"
               >
                 <div className="space-y-2 text-center relative">
                   <div className="absolute -top-10 sm:-top-12 left-1/2 -translate-x-1/2 pointer-events-none">
                     <motion.div
-                      animate={mollyBounce ? { y: [0, -20, 0], scale: [1, 1.1, 1] } : {}}
-                      transition={{ duration: 0.5 }}
+                      animate={mollyBounce ? { y: [0, -14, 0] } : {}}
+                      transition={{ type: 'tween', ease: 'easeOut', duration: 0.4 }}
+                      style={{ willChange: 'transform' }}
                     >
                       <MollyCharacter 
                         size={50} 
@@ -400,9 +404,10 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
             {step === 3 && pastDecisionToRevisit && (
               <motion.div
                 key="step3"
-                initial={{ x: 20, opacity: 0 }}
+                initial={{ x: 10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
+                exit={{ x: -10, opacity: 0 }}
+                transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
                 className="space-y-8"
               >
                 <div className="space-y-2 text-center">
@@ -453,9 +458,10 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
             {step === 4 && (
               <motion.div
                 key="step4"
-                initial={{ x: 20, opacity: 0 }}
+                initial={{ x: 10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -20, opacity: 0 }}
+                exit={{ x: -10, opacity: 0 }}
+                transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
                 className="space-y-8 text-center"
               >
                 <div className="flex justify-center">
