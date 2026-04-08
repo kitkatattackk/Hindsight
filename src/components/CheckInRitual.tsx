@@ -21,6 +21,7 @@ import { format } from 'date-fns';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import MollyCharacter, { MollyExpression } from './MollyCharacter';
+import { haptic } from '../utils/haptics';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -66,6 +67,7 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
 
   const handleAddDecision = () => {
     if (currentDecision.text) {
+      haptic.medium();
       setDecisions([...decisions, { ...currentDecision, id: `new-${Date.now()}`, timestamp: Date.now() }]);
       setCurrentDecision({
         text: '',
@@ -95,6 +97,7 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
   };
 
   const handleComplete = () => {
+    haptic.success();
     // Save the past decision reflection if it was updated
     if (pastDecisionToRevisit && pastRevisitNote && onUpdateLog) {
       const logToUpdate = pastLogs.find(log => 
@@ -163,7 +166,7 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
                   {[1, 2, 3, 4, 5].map((score) => (
                     <button
                       key={score}
-                      onClick={() => setMood(score)}
+                      onClick={() => { setMood(score); haptic.light(); }}
                       className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-black transition-all flex items-center justify-center ${
                         mood === score ? 'bg-brand-yellow shadow-retro scale-110' : 'bg-white hover:bg-brand-yellow/20'
                       }`}
@@ -178,7 +181,7 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
                 </div>
 
                 <button 
-                  onClick={() => setStep(2)}
+                  onClick={() => { haptic.light(); setStep(2); }}
                   className="retro-button w-full flex items-center justify-center gap-2"
                 >
                   Next Step <ChevronRight className="w-5 h-5" />
@@ -391,7 +394,7 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
                     <ChevronLeft className="w-5 h-5" /> Back
                   </button>
                   <button 
-                    onClick={() => setStep(pastDecisionToRevisit ? 3 : 4)}
+                    onClick={() => { haptic.light(); setStep(pastDecisionToRevisit ? 3 : 4); }}
                     disabled={decisions.length === 0}
                     className="retro-button flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
                   >
@@ -446,7 +449,7 @@ export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs =
                     <ChevronLeft className="w-5 h-5" /> Back
                   </button>
                   <button 
-                    onClick={() => setStep(4)}
+                    onClick={() => { haptic.light(); setStep(4); }}
                     className="retro-button flex-1 flex items-center justify-center gap-2 shadow-retro active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
                   >
                     Final Step <ChevronRight className="w-5 h-5" />

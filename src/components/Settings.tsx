@@ -43,11 +43,13 @@ export default function Settings({ user, onUpdateUser }: SettingsProps) {
       const granted = await NotificationService.requestPermission();
       if (granted) {
         await NotificationService.registerServiceWorker();
+        await NotificationService.scheduleNightlyReminder(user.notificationTime);
         onUpdateUser({ ...user, notificationsEnabled: true });
-        NotificationService.sendTestNotification();
+        await NotificationService.sendTestNotification();
       }
       setIsRequestingNotifications(false);
     } else {
+      await NotificationService.cancelNightlyReminder();
       onUpdateUser({ ...user, notificationsEnabled: false });
     }
   };
@@ -207,7 +209,13 @@ export default function Settings({ user, onUpdateUser }: SettingsProps) {
                 type="time" 
                 className="retro-input py-1 px-2 text-sm"
                 value={user.notificationTime}
-                onChange={(e) => onUpdateUser({ ...user, notificationTime: e.target.value })}
+                onChange={async (e) => {
+                  const newTime = e.target.value;
+                  onUpdateUser({ ...user, notificationTime: newTime });
+                  if (user.notificationsEnabled) {
+                    await NotificationService.scheduleNightlyReminder(newTime);
+                  }
+                }}
               />
             </div>
           </div>
