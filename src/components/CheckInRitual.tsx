@@ -44,10 +44,13 @@ export default function CheckInRitual({
   const textRef = useRef<HTMLInputElement>(null);
 
   const pastDecisionToRevisit = React.useMemo(() => {
-    const all = pastLogs.flatMap(l => l.decisions);
-    if (!all.length) return null;
-    const candidates = all.filter(d => d.regretIntensity > 50 && !d.revisitNote);
-    const pool = candidates.length ? candidates : all;
+    const FIVE_DAYS = 5 * 24 * 60 * 60 * 1000;
+    const old = pastLogs
+      .flatMap(l => l.decisions)
+      .filter(d => Date.now() - d.timestamp >= FIVE_DAYS);
+    if (!old.length) return null;
+    const candidates = old.filter(d => d.regretIntensity > 50 && !d.revisitNote);
+    const pool = candidates.length ? candidates : old;
     return pool[Math.floor(Math.random() * pool.length)];
   }, [pastLogs]);
 
