@@ -42,10 +42,8 @@ export default function Settings({ user, onUpdateUser }: SettingsProps) {
       setIsRequestingNotifications(true);
       const granted = await NotificationService.requestPermission();
       if (granted) {
-        await NotificationService.registerServiceWorker();
         await NotificationService.scheduleNightlyReminder(user.notificationTime);
         onUpdateUser({ ...user, notificationsEnabled: true });
-        await NotificationService.sendTestNotification();
       }
       setIsRequestingNotifications(false);
     } else {
@@ -205,19 +203,29 @@ export default function Settings({ user, onUpdateUser }: SettingsProps) {
                   <p className="text-xs text-black/50">We'll nudge you to reflect before bed.</p>
                 </div>
               </div>
-              <input 
-                type="time" 
+              <input
+                type="time"
                 className="retro-input py-1 px-2 text-sm"
                 value={user.notificationTime}
-                onChange={async (e) => {
-                  const newTime = e.target.value;
-                  onUpdateUser({ ...user, notificationTime: newTime });
+                onChange={(e) => {
+                  onUpdateUser({ ...user, notificationTime: e.target.value });
+                }}
+                onBlur={async (e) => {
                   if (user.notificationsEnabled) {
-                    await NotificationService.scheduleNightlyReminder(newTime);
+                    await NotificationService.scheduleNightlyReminder(e.target.value);
                   }
                 }}
               />
             </div>
+
+            {user.notificationsEnabled && (
+              <button
+                onClick={() => NotificationService.sendTestNotification()}
+                className="w-full py-2 text-sm font-bold border-2 border-dashed border-black/20 rounded-2xl hover:bg-black/5 transition-colors flex items-center justify-center gap-2"
+              >
+                <Bell className="w-4 h-4" /> Send test notification
+              </button>
+            )}
           </div>
         </section>
 

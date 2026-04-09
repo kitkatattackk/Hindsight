@@ -1,502 +1,400 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  X, 
-  ChevronRight, 
-  ChevronLeft, 
-  Smile, 
-  Frown, 
-  Meh, 
-  CheckCircle2, 
-  Sparkles,
-  Plus,
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Smile,
+  Frown,
+  Meh,
+  CheckCircle2,
   Trash2,
-  AlertCircle,
-  Maximize2,
-  Edit2,
-  Clock
 } from 'lucide-react';
-import { Category, Decision, DayLog, UserProfile } from '../types';
+import { Decision, DayLog, UserProfile } from '../types';
 import { format } from 'date-fns';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 import MollyCharacter, { MollyExpression } from './MollyCharacter';
 import { haptic } from '../utils/haptics';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 interface CheckInRitualProps {
   onClose: () => void;
   onSave: (log: DayLog) => void;
   onUpdateLog?: (log: DayLog) => void;
   pastLogs?: DayLog[];
-  categories: Category[];
+  categories: string[];
   user: UserProfile;
 }
 
-export default function CheckInRitual({ onClose, onSave, onUpdateLog, pastLogs = [], categories, user }: CheckInRitualProps) {
+const INTENSITY_LEVELS = [
+  { label: 'A little',  value: 20, color: 'bg-green-400',    activeRing: 'ring-green-500'  },
+  { label: 'Somewhat',  value: 55, color: 'bg-brand-yellow', activeRing: 'ring-yellow-400' },
+  { label: 'A lot',     value: 85, color: 'bg-brand-pink',   activeRing: 'ring-pink-500'   },
+] as const;
+
+export default function CheckInRitual({
+  onClose, onSave, onUpdateLog, pastLogs = [], categories, user,
+}: CheckInRitualProps) {
   const [step, setStep] = useState(1);
-  const [mood, setMood] = useState<number>(3);
+  const [mood, setMood] = useState(3);
   const [decisions, setDecisions] = useState<Partial<Decision>[]>([]);
-  const [currentDecision, setCurrentDecision] = useState<Partial<Decision>>({
-    text: '',
-    regretIntensity: 50,
-    category: categories[0] || 'Impulse',
-    regretReason: '',
-    note: '',
-    revisitNote: ''
-  });
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [text, setText] = useState('');
+  const [intensity, setIntensity] = useState(55);
+  const [category, setCategory] = useState(categories[0] || 'Other');
   const [mollyExpression, setMollyExpression] = useState<MollyExpression>(user.mollyExpression);
   const [mollyBounce, setMollyBounce] = useState(false);
+  const textRef = useRef<HTMLInputElement>(null);
 
-  // Select a random past decision to revisit
   const pastDecisionToRevisit = React.useMemo(() => {
-    if (pastLogs.length === 0) return null;
-    const allPastDecisions = pastLogs.flatMap(log => log.decisions);
-    if (allPastDecisions.length === 0) return null;
-    // Filter for decisions with high regret or no revisit note
-    const candidates = allPastDecisions.filter(d => d.regretIntensity > 50 && !d.revisitNote);
-    const pool = candidates.length > 0 ? candidates : allPastDecisions;
+    const all = pastLogs.flatMap(l => l.decisions);
+    if (!all.length) return null;
+    const candidates = all.filter(d => d.regretIntensity > 50 && !d.revisitNote);
+    const pool = candidates.length ? candidates : all;
     return pool[Math.floor(Math.random() * pool.length)];
   }, [pastLogs]);
 
   const [pastRevisitNote, setPastRevisitNote] = useState('');
 
-  const handleAddDecision = () => {
-    if (currentDecision.text) {
-      haptic.medium();
-      setDecisions([...decisions, { ...currentDecision, id: `new-${Date.now()}`, timestamp: Date.now() }]);
-      setCurrentDecision({
-        text: '',
-        regretIntensity: 50,
-        category: categories[0] || 'Impulse',
-        regretReason: '',
-        note: '',
-        revisitNote: ''
-      });
-      
-      // Positive reinforcement animation
-      setMollyExpression('happy');
-      setMollyBounce(true);
-      setTimeout(() => {
-        setMollyExpression(user.mollyExpression);
-        setMollyBounce(false);
-      }, 2000);
-    }
-  };
+  const canAdd = text.trim().length > 0;
 
-  const handleUpdateDecisionNote = (id: string, note: string) => {
-    setDecisions(decisions.map(d => d.id === id ? { ...d, revisitNote: note } : d));
-  };
-
-  const handleRemoveDecision = (id: string) => {
-    setDecisions(decisions.filter(d => d.id !== id));
+  const handleAdd = () => {
+    if (!canAdd) return;
+    haptic.medium();
+    setDecisions(prev => [
+      ...prev,
+      { id: `new-${Date.now()}`, text: text.trim(), regretIntensity: intensity, category, timestamp: Date.now() },
+    ]);
+    setText('');
+    setIntensity(55);
+    setCategory(categories[0] || 'Other');
+    setMollyExpression('happy');
+    setMollyBounce(true);
+    setTimeout(() => { setMollyExpression(user.mollyExpression); setMollyBounce(false); }, 1800);
+    setTimeout(() => textRef.current?.focus(), 50);
   };
 
   const handleComplete = () => {
     haptic.success();
-    // Save the past decision reflection if it was updated
     if (pastDecisionToRevisit && pastRevisitNote && onUpdateLog) {
-      const logToUpdate = pastLogs.find(log => 
-        log.decisions.some(d => d.id === pastDecisionToRevisit.id)
-      );
+      const logToUpdate = pastLogs.find(l => l.decisions.some(d => d.id === pastDecisionToRevisit.id));
       if (logToUpdate) {
-        const updatedDecisions = logToUpdate.decisions.map(d => 
-          d.id === pastDecisionToRevisit.id ? { ...d, revisitNote: pastRevisitNote } : d
-        );
-        onUpdateLog({ ...logToUpdate, decisions: updatedDecisions });
+        onUpdateLog({
+          ...logToUpdate,
+          decisions: logToUpdate.decisions.map(d =>
+            d.id === pastDecisionToRevisit.id ? { ...d, revisitNote: pastRevisitNote } : d
+          ),
+        });
       }
     }
-
-    const finalLog: DayLog = {
+    onSave({
       id: `log-${Date.now()}`,
       date: format(new Date(), 'yyyy-MM-dd'),
       moodScore: mood,
-      decisions: decisions as Decision[]
-    };
-    onSave(finalLog);
+      decisions: decisions as Decision[],
+    });
   };
 
+  const goNext = () => { haptic.light(); setStep(s => s + 1); };
+  const goBack = () => { haptic.light(); setStep(s => s - 1); };
+
+  const totalSteps = pastDecisionToRevisit ? 4 : 3;
+  // map logical step to progress step
+  const progressStep = step === 4 ? totalSteps : step;
+
   return (
-    <div className="absolute inset-0 z-[100] flex items-center justify-center bg-brand-purple/40">
+    <div className="absolute inset-0 z-[100] flex items-end justify-center">
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'tween', ease: [0.25, 0.46, 0.45, 0.94], duration: 0.28 }}
         style={{ willChange: 'transform' }}
-        className="retro-card w-full h-full bg-white relative overflow-hidden flex flex-col"
+        className="w-full h-full bg-white flex flex-col border-4 border-black shadow-retro overflow-hidden"
       >
-        {/* Progress Bar */}
-        <div className="absolute top-0 left-0 w-full h-2 bg-gray-100 z-20">
-          <motion.div 
+        {/* Progress bar */}
+        <div className="h-1.5 bg-gray-100 shrink-0">
+          <motion.div
             className="h-full bg-brand-pink"
-            initial={{ width: '0%' }}
-            animate={{ width: `${(step / 4) * 100}%` }}
+            animate={{ width: `${(progressStep / totalSteps) * 100}%` }}
+            transition={{ type: 'tween', ease: 'easeOut', duration: 0.3 }}
           />
         </div>
 
-        <button 
+        {/* Close */}
+        <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-20 bg-white/80 backdrop-blur-sm shadow-sm"
+          className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 transition-colors z-20"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
 
-        <div className="flex-1 overflow-y-auto pt-12 pb-8 px-4 md:px-8">
+        <div className="flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
+
+            {/* ── Step 1: Mood ── */}
             {step === 1 && (
               <motion.div
-                key="step1"
-                initial={{ x: 10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -10, opacity: 0 }}
+                key="s1"
+                initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}
                 transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
-                className="space-y-8 text-center"
+                className="flex flex-col min-h-full px-6 pt-14 pb-8 gap-8"
               >
-                <div className="space-y-2">
-                  <h2 className="text-3xl sm:text-4xl font-display text-brand-purple">How was your day?</h2>
-                  <p className="text-sm sm:text-base text-black/60">Take a deep breath. Let's reflect on the mood of your day.</p>
+                <div className="flex flex-col items-center gap-2 text-center">
+                  <MollyCharacter size={80} expression={user.mollyExpression} color={user.mollyColor} />
+                  <h2 className="text-3xl font-display text-brand-purple mt-2">How was your day?</h2>
+                  <p className="text-sm text-black/50">Give it an honest rating.</p>
                 </div>
 
-                <div className="flex justify-center gap-2 sm:gap-4">
+                <div className="flex justify-center gap-3">
                   {[1, 2, 3, 4, 5].map((score) => (
                     <button
                       key={score}
                       onClick={() => { setMood(score); haptic.light(); }}
-                      className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl border-2 sm:border-4 border-black transition-all flex items-center justify-center ${
+                      className={`w-14 h-14 rounded-2xl border-4 border-black flex items-center justify-center transition-all ${
                         mood === score ? 'bg-brand-yellow shadow-retro scale-110' : 'bg-white hover:bg-brand-yellow/20'
                       }`}
                     >
-                      {score === 1 && <Frown className="w-6 h-6 sm:w-8 sm:h-8" />}
-                      {score === 2 && <Frown className="w-6 h-6 sm:w-8 sm:h-8 opacity-50" />}
-                      {score === 3 && <Meh className="w-6 h-6 sm:w-8 sm:h-8" />}
-                      {score === 4 && <Smile className="w-6 h-6 sm:w-8 sm:h-8 opacity-50" />}
-                      {score === 5 && <Smile className="w-6 h-6 sm:w-8 sm:h-8" />}
+                      {score <= 2 && <Frown className={`w-7 h-7 ${score === 2 ? 'opacity-60' : ''}`} />}
+                      {score === 3 && <Meh className="w-7 h-7" />}
+                      {score >= 4 && <Smile className={`w-7 h-7 ${score === 4 ? 'opacity-60' : ''}`} />}
                     </button>
                   ))}
                 </div>
 
-                <button 
-                  onClick={() => { haptic.light(); setStep(2); }}
-                  className="retro-button w-full flex items-center justify-center gap-2"
-                >
-                  Next Step <ChevronRight className="w-5 h-5" />
-                </button>
+                <div className="mt-auto">
+                  <button onClick={goNext} className="retro-button w-full flex items-center justify-center gap-2">
+                    Next <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
               </motion.div>
             )}
 
+            {/* ── Step 2: Log regrets ── */}
             {step === 2 && (
               <motion.div
-                key="step2"
-                initial={{ x: 10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -10, opacity: 0 }}
+                key="s2"
+                initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}
                 transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
-                className="space-y-6"
+                className="flex flex-col min-h-full px-6 pt-14 pb-8 gap-6"
               >
-                <div className="space-y-2 text-center relative">
-                  <div className="absolute -top-10 sm:-top-12 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <motion.div
-                      animate={mollyBounce ? { y: [0, -14, 0] } : {}}
-                      transition={{ type: 'tween', ease: 'easeOut', duration: 0.4 }}
-                      style={{ willChange: 'transform' }}
-                    >
-                      <MollyCharacter 
-                        size={50} 
-                        expression={mollyExpression} 
-                        color={user.mollyColor}
-                        className="opacity-80 sm:w-[60px] sm:h-[60px]"
-                      />
-                    </motion.div>
-                  </div>
-                  <h2 className="text-3xl sm:text-4xl font-display text-brand-purple">Any regrets today?</h2>
-                  <p className="text-sm sm:text-base text-black/60">Log 1-3 decisions that are weighing on you. Be honest with yourself.</p>
-                </div>
-
-                <div className="space-y-4">
-                  {decisions.map((d) => (
-                    <div key={d.id} className="space-y-3 bg-brand-yellow/20 border-2 border-black border-dashed p-3 rounded-xl">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-bold">{d.text}</p>
-                          <p className="text-xs text-black/50">{d.category} • {d.regretIntensity}% regret</p>
-                          {d.regretReason && <p className="text-[10px] italic text-black/40 mt-1">Reason: {d.regretReason}</p>}
-                        </div>
-                        <button onClick={() => handleRemoveDecision(d.id!)} className="text-brand-pink hover:text-red-600">
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-
-                      {/* Revisit Note Section */}
-                      <div className="pt-2 border-t border-black/10">
-                        {editingNoteId === d.id ? (
-                          <div className="space-y-2">
-                            <textarea
-                              autoFocus
-                              className="retro-input w-full text-xs min-h-[60px] resize-none"
-                              value={d.revisitNote || ''}
-                              onChange={(e) => handleUpdateDecisionNote(d.id!, e.target.value)}
-                              placeholder="How do you feel about this now?"
-                            />
-                            <button 
-                              onClick={() => setEditingNoteId(null)}
-                              className="text-[10px] font-bold bg-black text-white px-3 py-1 rounded-lg uppercase"
-                            >
-                              Done
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-1">
-                            <button 
-                              onClick={() => setEditingNoteId(d.id!)}
-                              className="text-[10px] font-bold text-brand-purple flex items-center gap-1 hover:underline uppercase tracking-wider"
-                            >
-                              <Edit2 className="w-3 h-3" /> {d.revisitNote ? 'Update Reflection' : 'Add Initial Reflection'}
-                            </button>
-                            {d.revisitNote && (
-                              <p className="text-xs italic text-black/60">"{d.revisitNote}"</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {decisions.length < 3 && (
-                    <div className="space-y-6 bg-gray-50 p-4 sm:p-6 rounded-2xl border-2 border-black/5">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold uppercase tracking-wider">What did you decide?</label>
-                        <input 
-                          type="text"
-                          placeholder="e.g., Bought that expensive gadget"
-                          className="retro-input w-full py-3"
-                          value={currentDecision.text}
-                          onChange={(e) => setCurrentDecision({ ...currentDecision, text: e.target.value })}
-                        />
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold uppercase tracking-wider">Category</label>
-                          <select 
-                            className="retro-input w-full text-sm"
-                            value={currentDecision.category}
-                            onChange={(e) => setCurrentDecision({ ...currentDecision, category: e.target.value })}
-                          >
-                            {categories.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between items-center">
-                            <label className="text-xs font-bold uppercase tracking-wider">Regret Intensity</label>
-                            <motion.span 
-                              key={currentDecision.regretIntensity}
-                              initial={{ scale: 1.2 }}
-                              animate={{ scale: 1 }}
-                              className={cn(
-                                "text-xs font-bold px-2 py-0.5 rounded border-2 border-black shadow-retro-sm",
-                                currentDecision.regretIntensity! < 30 ? "bg-green-400" : 
-                                currentDecision.regretIntensity! < 70 ? "bg-brand-yellow" : "bg-brand-pink text-white"
-                              )}
-                            >
-                              {currentDecision.regretIntensity}%
-                            </motion.span>
-                          </div>
-                          <div className="relative pt-2">
-                            <input 
-                              type="range"
-                              className="w-full h-3 rounded-lg appearance-none cursor-pointer accent-black border-2 border-black shadow-retro-sm"
-                              style={{
-                                background: `linear-gradient(to right, #4ade80 0%, #fdee88 50%, #f310f6 100%)`
-                              }}
-                              value={currentDecision.regretIntensity}
-                              onChange={(e) => setCurrentDecision({ ...currentDecision, regretIntensity: parseInt(e.target.value) })}
-                            />
-                            <div className="flex justify-between px-1 mt-1">
-                              {[0, 25, 50, 75, 100].map(tick => (
-                                <div key={tick} className="w-0.5 h-1.5 bg-black/20 rounded-full" />
-                              ))}
-                            </div>
-                            <div className="flex justify-between mt-1 px-1">
-                              <span className="text-[10px] font-bold text-black/40 uppercase">Low</span>
-                              <span className="text-[10px] font-bold text-black/40 uppercase">Moderate</span>
-                              <span className="text-[10px] font-bold text-black/40 uppercase">Heavy</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold uppercase tracking-wider">Why this regret? (Optional)</label>
-                          <input 
-                            type="text"
-                            placeholder="Briefly, what's the main reason?"
-                            className="retro-input w-full text-sm py-3"
-                            value={currentDecision.regretReason || ''}
-                            onChange={(e) => setCurrentDecision({ ...currentDecision, regretReason: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <label className="text-xs font-bold uppercase tracking-wider">Optional Note</label>
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-black/30 uppercase">
-                            <Maximize2 className="w-3 h-3" />
-                            Expandable
-                          </div>
-                        </div>
-                        <textarea 
-                          placeholder="Any extra context or thoughts?"
-                          className="retro-input w-full min-h-[100px] text-sm resize-y py-3"
-                          value={currentDecision.note}
-                          onChange={(e) => setCurrentDecision({ ...currentDecision, note: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <div className="flex justify-between items-center">
-                          <label className="text-xs font-bold uppercase tracking-wider">Initial Reflection</label>
-                          <div className="flex items-center gap-1 text-[10px] font-bold text-black/30 uppercase">
-                            <Clock className="w-3 h-3" />
-                            Future You will see this
-                          </div>
-                        </div>
-                        <textarea 
-                          placeholder="How do you feel about this decision right now? (Optional)"
-                          className="retro-input w-full min-h-[60px] text-sm resize-none"
-                          value={currentDecision.revisitNote}
-                          onChange={(e) => setCurrentDecision({ ...currentDecision, revisitNote: e.target.value })}
-                        />
-                      </div>
-
-                      <button 
-                        onClick={handleAddDecision}
-                        disabled={!currentDecision.text}
-                        className="w-full py-2 border-2 border-black border-dashed rounded-xl flex items-center justify-center gap-2 hover:bg-brand-purple/10 transition-colors disabled:opacity-50"
-                      >
-                        <Plus className="w-4 h-4" /> Add Decision
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setStep(1)}
-                    className="retro-button bg-white text-black hover:bg-gray-100 flex-1 flex items-center justify-center gap-2"
+                {/* Header */}
+                <div className="text-center space-y-1">
+                  <motion.div
+                    animate={mollyBounce ? { y: [0, -12, 0] } : {}}
+                    transition={{ type: 'tween', ease: 'easeOut', duration: 0.35 }}
+                    className="inline-block"
                   >
-                    <ChevronLeft className="w-5 h-5" /> Back
+                    <MollyCharacter size={48} expression={mollyExpression} color={user.mollyColor} />
+                  </motion.div>
+                  <h2 className="text-2xl font-display text-brand-purple">Any regrets?</h2>
+                  <p className="text-xs text-black/50">Log the decisions weighing on you.</p>
+                </div>
+
+                {/* Logged decisions */}
+                <AnimatePresence>
+                  {decisions.map((d) => (
+                    <motion.div
+                      key={d.id}
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      className="flex items-center gap-3 bg-brand-yellow/30 border-2 border-black rounded-2xl px-4 py-3"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-sm truncate">{d.text}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[10px] text-black/50">{d.category}</span>
+                          <span className="text-[10px] font-bold text-black/40">·</span>
+                          <span className={`text-[10px] font-bold ${
+                            d.regretIntensity! < 40 ? 'text-green-600' :
+                            d.regretIntensity! < 70 ? 'text-yellow-600' : 'text-pink-600'
+                          }`}>
+                            {d.regretIntensity! < 40 ? 'A little' : d.regretIntensity! < 70 ? 'Somewhat' : 'A lot'}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setDecisions(prev => prev.filter(x => x.id !== d.id))}
+                        className="text-black/30 hover:text-red-500 transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {/* Add form — hidden once 3 added */}
+                {decisions.length < 3 && (
+                  <div className="space-y-4 bg-gray-50 rounded-2xl border-2 border-black/10 p-4">
+                    {/* Text input */}
+                    <input
+                      ref={textRef}
+                      type="text"
+                      placeholder="What's weighing on you?"
+                      className="retro-input w-full py-3 text-base"
+                      value={text}
+                      onChange={e => setText(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleAdd()}
+                      autoFocus
+                    />
+
+                    {/* Intensity */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-black/40">How much regret?</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {INTENSITY_LEVELS.map(lvl => (
+                          <button
+                            key={lvl.value}
+                            onClick={() => setIntensity(lvl.value)}
+                            className={`py-2.5 rounded-xl border-2 border-black font-bold text-sm transition-all ${
+                              intensity === lvl.value
+                                ? `${lvl.color} shadow-retro-sm scale-[1.03]`
+                                : 'bg-white hover:bg-gray-100'
+                            }`}
+                          >
+                            {lvl.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Category chips */}
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-black/40">Category</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {categories.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => setCategory(cat)}
+                            className={`px-3 py-1 rounded-full border-2 border-black text-xs font-bold transition-all ${
+                              category === cat
+                                ? 'bg-brand-purple text-white shadow-retro-sm'
+                                : 'bg-white hover:bg-gray-50'
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Add button */}
+                    <button
+                      onClick={handleAdd}
+                      disabled={!canAdd}
+                      className="retro-button w-full disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Log it
+                    </button>
+                  </div>
+                )}
+
+                {/* Nav */}
+                <div className="mt-auto flex gap-3">
+                  <button
+                    onClick={goBack}
+                    className="retro-button bg-white text-black hover:bg-gray-100 px-4 flex items-center gap-1"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
                   </button>
-                  <button 
+                  <button
                     onClick={() => { haptic.light(); setStep(pastDecisionToRevisit ? 3 : 4); }}
                     disabled={decisions.length === 0}
-                    className="retro-button flex-1 flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="retro-button flex-1 flex items-center justify-center gap-2 disabled:opacity-40"
                   >
-                    {pastDecisionToRevisit ? 'Next: Reflect' : 'Review'} <ChevronRight className="w-5 h-5" />
+                    {decisions.length === 0 ? 'Skip' : 'Continue'} <ChevronRight className="w-5 h-5" />
                   </button>
                 </div>
               </motion.div>
             )}
 
+            {/* ── Step 3: Perspective (past decision) ── */}
             {step === 3 && pastDecisionToRevisit && (
               <motion.div
-                key="step3"
-                initial={{ x: 10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -10, opacity: 0 }}
+                key="s3"
+                initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}
                 transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
-                className="space-y-8"
+                className="flex flex-col min-h-full px-6 pt-14 pb-8 gap-6"
               >
-                <div className="space-y-2 text-center">
-                  <h2 className="text-3xl sm:text-4xl font-display text-brand-purple">Perspective</h2>
-                  <p className="text-sm sm:text-base text-black/60">Looking back at a past regret. How does it feel now?</p>
+                <div className="text-center space-y-1">
+                  <h2 className="text-2xl font-display text-brand-purple">Looking back</h2>
+                  <p className="text-xs text-black/50">How does this past decision feel now?</p>
                 </div>
 
-                <div className="retro-card bg-brand-yellow/10 border-dashed">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border border-black bg-white">
+                <div className="retro-card bg-brand-yellow/10 border-dashed space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold border-2 border-black rounded-full px-2 py-0.5 bg-white">
                       {pastDecisionToRevisit.category}
                     </span>
-                    <span className="text-[10px] font-mono text-black/50">
-                      {format(pastDecisionToRevisit.timestamp, 'MMM do, yyyy')}
+                    <span className="text-[10px] font-mono text-black/40">
+                      {format(pastDecisionToRevisit.timestamp, 'MMM d, yyyy')}
                     </span>
                   </div>
-                  <p className="text-lg font-bold mb-4">"{pastDecisionToRevisit.text}"</p>
-                  
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-black/40">Your Reflection</label>
-                    <textarea 
-                      autoFocus
-                      placeholder="Has your intensity changed? What did you learn?"
-                      className="retro-input w-full min-h-[120px] text-sm resize-none"
-                      value={pastRevisitNote}
-                      onChange={(e) => setPastRevisitNote(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-4">
-                  <button 
-                    onClick={() => setStep(2)}
-                    className="retro-button bg-white text-black hover:bg-gray-100 flex-1 flex items-center justify-center gap-2"
-                  >
-                    <ChevronLeft className="w-5 h-5" /> Back
-                  </button>
-                  <button 
-                    onClick={() => { haptic.light(); setStep(4); }}
-                    className="retro-button flex-1 flex items-center justify-center gap-2 shadow-retro active:shadow-none active:translate-x-1 active:translate-y-1 transition-all"
-                  >
-                    Final Step <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-              </motion.div>
-            )}
-
-            {step === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ x: 10, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                exit={{ x: -10, opacity: 0 }}
-                transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
-                className="space-y-8 text-center"
-              >
-                <div className="flex justify-center">
-                  <MollyCharacter 
-                    size={120} 
-                    expression="happy" 
-                    color={user.mollyColor}
-                    className="animate-bounce" 
+                  <p className="font-bold text-base">"{pastDecisionToRevisit.text}"</p>
+                  <textarea
+                    autoFocus
+                    placeholder="What do you think now? Has your perspective changed?"
+                    className="retro-input w-full min-h-[110px] text-sm resize-none"
+                    value={pastRevisitNote}
+                    onChange={e => setPastRevisitNote(e.target.value)}
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <h2 className="text-3xl sm:text-4xl font-display text-brand-purple">Ritual Complete</h2>
-                  <p className="text-sm sm:text-base text-black/60">
-                    You've acknowledged your day. By logging these, you're taking the first step toward understanding your patterns.
+                <div className="mt-auto flex gap-3">
+                  <button onClick={goBack} className="retro-button bg-white text-black hover:bg-gray-100 px-4 flex items-center">
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button onClick={() => { haptic.light(); setStep(4); }} className="retro-button flex-1 flex items-center justify-center gap-2">
+                    Continue <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* ── Step 4: Complete ── */}
+            {step === 4 && (
+              <motion.div
+                key="s4"
+                initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }}
+                transition={{ type: 'tween', ease: 'easeOut', duration: 0.2 }}
+                className="flex flex-col min-h-full px-6 pt-14 pb-8 gap-6 text-center"
+              >
+                <div className="flex flex-col items-center gap-3">
+                  <MollyCharacter size={100} expression="happy" color={user.mollyColor} />
+                  <h2 className="text-3xl font-display text-brand-purple">Ritual complete</h2>
+                  <p className="text-sm text-black/50 max-w-xs">
+                    You showed up for yourself today. That's what matters.
                   </p>
                 </div>
 
-                <div className="bg-brand-purple/5 p-4 rounded-2xl border-2 border-black border-dashed">
-                  <p className="italic text-brand-purple font-medium">
+                {/* Summary */}
+                {decisions.length > 0 && (
+                  <div className="text-left space-y-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-black/40">Today you logged</p>
+                    {decisions.map(d => (
+                      <div key={d.id} className="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-black/5">
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${
+                          d.regretIntensity! < 40 ? 'bg-green-400' :
+                          d.regretIntensity! < 70 ? 'bg-yellow-400' : 'bg-brand-pink'
+                        }`} />
+                        <p className="text-sm font-medium truncate">{d.text}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="bg-brand-purple/5 rounded-2xl border-2 border-dashed border-brand-purple/20 p-4">
+                  <p className="italic text-brand-purple text-sm font-medium">
                     "The only real mistake is the one from which we learn nothing."
                   </p>
                 </div>
 
-                <button 
-                  onClick={handleComplete}
-                  className="retro-button w-full flex items-center justify-center gap-2"
-                >
-                  Save & Rest <CheckCircle2 className="w-5 h-5" />
-                </button>
+                <div className="mt-auto">
+                  <button onClick={handleComplete} className="retro-button w-full flex items-center justify-center gap-2">
+                    Save <CheckCircle2 className="w-5 h-5" />
+                  </button>
+                </div>
               </motion.div>
             )}
+
           </AnimatePresence>
         </div>
       </motion.div>
