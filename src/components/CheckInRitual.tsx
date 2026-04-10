@@ -103,7 +103,7 @@ export default function CheckInRitual({
   const progressStep = step === 4 ? totalSteps : step;
 
   return (
-    <div className="absolute inset-0 z-[100] flex items-end justify-center">
+    <div className="absolute inset-0 z-[200] flex items-end justify-center">
       <motion.div
         initial={{ y: '100%' }}
         animate={{ y: 0 }}

@@ -1,17 +1,18 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { 
-  Calendar, 
-  Smile, 
-  Frown, 
-  Meh, 
-  ChevronRight, 
-  MessageSquare, 
-  Tag, 
-  Clock, 
+import {
+  Calendar,
+  Smile,
+  Frown,
+  Meh,
+  ChevronRight,
+  MessageSquare,
+  Tag,
+  Clock,
   AlertCircle,
   Edit2,
   Search,
+  Trash2,
   X as XIcon
 } from 'lucide-react';
 import { DayLog, Category, Decision } from '../types';
@@ -20,6 +21,7 @@ import { format, parseISO } from 'date-fns';
 interface JournalProps {
   logs: DayLog[];
   onUpdateLog: (log: DayLog) => void;
+  onDeleteLog: (logId: string) => void;
 }
 
 const MoodIcon = ({ score }: { score: number }) => {
@@ -47,10 +49,11 @@ const CategoryBadge = ({ category }: { category: Category }) => {
   );
 };
 
-export default function Journal({ logs, onUpdateLog }: JournalProps) {
+export default function Journal({ logs, onUpdateLog, onDeleteLog }: JournalProps) {
   const [editingDecisionId, setEditingDecisionId] = React.useState<string | null>(null);
   const [revisitValue, setRevisitValue] = React.useState('');
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = React.useState<string | null>(null);
 
   const filteredLogs = React.useMemo(() => {
     if (!searchQuery.trim()) return logs;
@@ -137,9 +140,34 @@ export default function Journal({ logs, onUpdateLog }: JournalProps) {
                 <h3 className="text-xl font-display text-brand-purple">
                   {format(parseISO(log.date), 'EEEE, MMM do')}
                 </h3>
-                <div className="flex items-center gap-2 bg-white border-2 border-black px-2 py-1 rounded-lg shadow-retro-sm">
-                  <MoodIcon score={log.moodScore} />
-                  <span className="font-bold text-sm">{log.moodScore}/5</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 bg-white border-2 border-black px-2 py-1 rounded-lg shadow-retro-sm">
+                    <MoodIcon score={log.moodScore} />
+                    <span className="font-bold text-sm">{log.moodScore}/5</span>
+                  </div>
+                  {confirmDeleteId === log.id ? (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => { onDeleteLog(log.id); setConfirmDeleteId(null); }}
+                        className="bg-brand-pink text-white px-2 py-1 rounded-lg font-bold text-xs border-2 border-black shadow-retro-sm active:shadow-none active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="bg-white px-2 py-1 rounded-lg font-bold text-xs border-2 border-black hover:bg-gray-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(log.id)}
+                      className="p-1.5 rounded-lg hover:bg-brand-pink/10 text-black/30 hover:text-brand-pink transition-colors border-2 border-transparent hover:border-brand-pink/20"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
 

@@ -17,7 +17,9 @@ import {
   LayoutDashboard,
   CheckCircle2,
   Activity,
-  Award
+  Award,
+  HelpCircle,
+  X as XIcon
 } from 'lucide-react';
 import { 
   AreaChart,
@@ -66,6 +68,8 @@ const EmptyStateIllustration = ({ icon: Icon, title, description, colorClass }: 
 );
 
 export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
+  const [showDecayInfo, setShowDecayInfo] = React.useState(false);
+
   // Calculate category breakdown
   const categoryStats = logs.reduce((acc, log) => {
     log.decisions.forEach(d => {
@@ -319,7 +323,34 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
               <TrendingDown className="w-5 h-5 text-brand-purple" />
               Regret Decay (30d)
             </h3>
+            <button
+              onClick={() => setShowDecayInfo(v => !v)}
+              className="p-1.5 rounded-full hover:bg-brand-purple/10 text-black/30 hover:text-brand-purple transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
           </div>
+
+          <AnimatePresence>
+            {showDecayInfo && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.15 }}
+                className="mb-4 p-3 bg-brand-purple/5 border-2 border-brand-purple/20 rounded-xl text-sm text-black/70 leading-relaxed relative"
+              >
+                <button
+                  onClick={() => setShowDecayInfo(false)}
+                  className="absolute top-2 right-2 p-0.5 hover:bg-black/10 rounded-full transition-colors"
+                >
+                  <XIcon className="w-3 h-3 text-black/40" />
+                </button>
+                <p className="font-bold text-brand-purple mb-1 text-xs uppercase tracking-wider">What is Regret Decay?</p>
+                <p>This chart tracks your average regret intensity over the past 30 days. As you reflect and grow, the line should trend downward — meaning you're either making fewer regrettable decisions or feeling less intensely about past ones. A declining curve is progress.</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           <div className="flex-1 w-full opacity-90 relative">
             {logs.length > 0 ? (
@@ -422,11 +453,16 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
               <Activity className="w-6 h-6 text-brand-purple" />
               Regret Intensity Mapping
             </h3>
-            <span className="text-[10px] font-bold bg-black text-white px-2 py-1 rounded uppercase tracking-widest opacity-50">D3 Engine</span>
+            <a
+              href="https://d3js.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] font-bold bg-black text-white px-2 py-1 rounded uppercase tracking-widest opacity-50 hover:opacity-80 transition-opacity"
+            >D3 Engine</a>
           </div>
           
           <div className="flex flex-col md:flex-row gap-8 flex-1">
-            <div className="flex-1">
+            <div className="flex-1 min-h-[300px]">
               {logs.length > 0 ? (
                 <RegretMapping logs={logs} />
               ) : (

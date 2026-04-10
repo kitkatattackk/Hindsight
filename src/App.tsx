@@ -78,6 +78,12 @@ export default function App() {
     localStorage.setItem('hindsight_logs', JSON.stringify(updatedLogs));
   };
 
+  const handleDeleteLog = (logId: string) => {
+    const updatedLogs = logs.filter(l => l.id !== logId);
+    setLogs(updatedLogs);
+    localStorage.setItem('hindsight_logs', JSON.stringify(updatedLogs));
+  };
+
   const handleUpdateUser = (updatedUser: UserProfile) => {
     setUser(updatedUser);
     localStorage.setItem('hindsight_user', JSON.stringify(updatedUser));
@@ -92,21 +98,23 @@ export default function App() {
         {!user.hasCompletedOnboarding ? (
           <Onboarding key="onboarding-screen" onComplete={handleUpdateUser} />
         ) : (
-          <Layout 
-            onCheckIn={() => setIsCheckInOpen(true)}
-            user={user}
-          >
-            <ErrorBoundary>
-              {activeTab === 'dashboard' && <Dashboard logs={logs} onCheckIn={() => setIsCheckInOpen(true)} />}
-              {activeTab === 'journal' && <Journal logs={logs} onUpdateLog={handleUpdateLog} />}
-              {activeTab === 'settings' && <Settings user={user} onUpdateUser={handleUpdateUser} />}
-            </ErrorBoundary>
+          <>
+            <Layout
+              onCheckIn={() => setIsCheckInOpen(true)}
+              user={user}
+            >
+              <ErrorBoundary>
+                {activeTab === 'dashboard' && <Dashboard logs={logs} onCheckIn={() => setIsCheckInOpen(true)} />}
+                {activeTab === 'journal' && <Journal logs={logs} onUpdateLog={handleUpdateLog} onDeleteLog={handleDeleteLog} />}
+                {activeTab === 'settings' && <Settings user={user} onUpdateUser={handleUpdateUser} />}
+              </ErrorBoundary>
+            </Layout>
 
             <AnimatePresence>
               {isCheckInOpen && (
                 <ErrorBoundary>
-                  <CheckInRitual 
-                    onClose={() => setIsCheckInOpen(false)} 
+                  <CheckInRitual
+                    onClose={() => setIsCheckInOpen(false)}
                     onSave={handleSaveLog}
                     onUpdateLog={handleUpdateLog}
                     pastLogs={logs}
@@ -116,7 +124,7 @@ export default function App() {
                 </ErrorBoundary>
               )}
             </AnimatePresence>
-          </Layout>
+          </>
         )}
 
         {/* Floating Bottom Navigation - Always visible if onboarding is done, or always if requested */}

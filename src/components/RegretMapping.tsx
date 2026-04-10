@@ -45,7 +45,7 @@ export default function RegretMapping({ logs }: RegretMappingProps) {
   }
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
+    <ResponsiveContainer width="100%" height={300}>
       <BarChart
         data={data}
         layout="vertical"
