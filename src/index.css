@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Concert+One&family=Fredoka:wght@300..700&family=Space+Grotesk:wght@300..700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Concert One", cursive;
+  --font-sans: "Fredoka", sans-serif;
+  --font-mono: "Space Grotesk", monospace;
+
+  --color-brand-purple: #4C22ED;
+  --color-brand-pink: #F310F6;
+  --color-brand-yellow: #FDEE88;
+  
+  --shadow-retro: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-retro-lg: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  --shadow-retro-sm: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+
+  --breakpoint-xs: 375px;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-yellow text-black font-sans antialiased select-none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .retro-card {
+    @apply bg-white border-4 border-black shadow-retro rounded-2xl p-4 md:p-6;
+  }
+  
+  .retro-button {
+    @apply bg-brand-purple text-white border-4 border-black shadow-retro px-4 py-2 md:px-6 md:py-3 rounded-xl font-display text-lg md:text-xl transition-all active:translate-x-1 active:translate-y-1 active:shadow-none hover:bg-brand-pink;
+  }
+
+  .retro-input {
+    @apply bg-white border-4 border-black rounded-xl px-3 py-2 md:px-4 md:py-2 focus:outline-none focus:ring-4 focus:ring-brand-pink/30 text-base;
+  }
+  
+}
+
+.bg-grid {
+  background-image: radial-gradient(circle, #000000 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.05;
+}

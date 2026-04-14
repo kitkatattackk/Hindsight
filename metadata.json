@@ -1,0 +1,5 @@
+{
+  "name": "Hindsight",
+  "description": "A nightly regret logging tool designed for end-of-day reflection and pattern recognition.",
+  "requestFramePermissions": []
+}
