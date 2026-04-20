@@ -246,13 +246,13 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
           <p className="text-sm sm:text-base text-black/60">Your emotional patterns at a glance.</p>
         </div>
         
-        <div className="flex items-stretch gap-3 w-full md:w-auto">
-          {/* Today's Status */}
-          <motion.div 
+        <div className="grid grid-cols-2 gap-3 w-full md:w-auto">
+          {/* Today's Status — full width on mobile */}
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className={cn(
-              "flex-1 flex items-center gap-3 border-4 border-black p-3 rounded-2xl shadow-retro-sm transition-colors relative overflow-hidden",
+              "col-span-2 flex items-center gap-3 border-4 border-black p-3 rounded-2xl shadow-retro-sm transition-colors relative overflow-hidden",
               isCheckInCompleteToday ? "bg-brand-yellow" : "bg-white"
             )}
           >
@@ -260,9 +260,9 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
               <motion.div
                 initial={{ x: '-100%' }}
                 animate={{ x: '250%' }}
-                transition={{ 
-                  repeat: Infinity, 
-                  duration: 2, 
+                transition={{
+                  repeat: Infinity,
+                  duration: 2,
                   ease: "linear",
                   repeatDelay: 3
                 }}
@@ -280,8 +280,8 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
               )}
             </div>
             <div className="min-w-0 relative z-10">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none truncate">Today's Ritual</p>
-              <p className="text-sm font-display leading-tight truncate">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none">Today's Ritual</p>
+              <p className="text-sm font-display leading-tight">
                 {isCheckInCompleteToday ? 'Complete!' : 'Pending'}
               </p>
             </div>
@@ -292,7 +292,7 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex-1 flex items-center gap-3 bg-white border-4 border-black p-3 rounded-2xl shadow-retro-sm"
+            className="flex items-center gap-3 bg-white border-4 border-black p-3 rounded-2xl shadow-retro-sm"
           >
             <div className={cn(
               "w-10 h-10 rounded-full flex items-center justify-center border-2 border-black shrink-0",
@@ -301,8 +301,8 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
               <Flame className={cn("w-6 h-6", streak > 0 ? "text-orange-500" : "text-gray-400")} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none truncate">Current Streak</p>
-              <p className="text-xl font-display leading-tight truncate">{streak} {streak === 1 ? 'Day' : 'Days'}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none">Streak</p>
+              <p className="text-xl font-display leading-tight">{streak}d</p>
             </div>
           </motion.div>
 
@@ -311,14 +311,14 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="flex-1 flex items-center gap-3 bg-emerald-50 border-4 border-black p-3 rounded-2xl shadow-retro-sm"
+            className="flex items-center gap-3 bg-emerald-50 border-4 border-black p-3 rounded-2xl shadow-retro-sm"
           >
             <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black shrink-0 bg-emerald-200">
               <Sun className="w-6 h-6 text-emerald-600" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none truncate">Wins Logged</p>
-              <p className="text-xl font-display leading-tight truncate">{totalWins}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none">Wins</p>
+              <p className="text-xl font-display leading-tight">{totalWins}</p>
             </div>
           </motion.div>
         </div>
