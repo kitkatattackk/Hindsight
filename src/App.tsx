@@ -29,7 +29,13 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [logs, setLogs] = useState<DayLog[]>(() => {
     const saved = localStorage.getItem('hindsight_logs');
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    try {
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem('hindsight_logs');
+      return [];
+    }
   });
   const [user, setUser] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('hindsight_user');
@@ -45,9 +51,14 @@ export default function App() {
       categoryReminders: []
     };
     if (!saved) return defaults;
-    const parsed = JSON.parse(saved);
-    // onboarded flag wins — ensures reinstalls never re-show onboarding
-    return { ...parsed, hasCompletedOnboarding: parsed.hasCompletedOnboarding || onboarded };
+    try {
+      const parsed = JSON.parse(saved);
+      // onboarded flag wins — ensures reinstalls never re-show onboarding
+      return { ...parsed, hasCompletedOnboarding: parsed.hasCompletedOnboarding || onboarded };
+    } catch {
+      localStorage.removeItem('hindsight_user');
+      return defaults;
+    }
   });
   const [isCheckInOpen, setIsCheckInOpen] = useState(false);
 
