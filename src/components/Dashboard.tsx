@@ -82,17 +82,21 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
 
   const categoryData = Object.entries(categoryStats).map(([name, value]) => ({ name, value }));
 
-  // Calculate regret intensity over time (last 30 days)
+  // Calculate regret intensity + wins over time (last 30 days)
   const chartDays = 30;
   const regretHistory = Array.from({ length: chartDays }).map((_, i) => {
     const date = format(subDays(new Date(), (chartDays - 1) - i), 'yyyy-MM-dd');
     const log = logs.find(l => l.date === date);
-    const avgRegret = log?.decisions.length 
-      ? log.decisions.reduce((sum, d) => sum + d.regretIntensity, 0) / log.decisions.length 
+    const avgRegret = log?.decisions.length
+      ? log.decisions.reduce((sum, d) => sum + d.regretIntensity, 0) / log.decisions.length
       : 0;
+    // Scale wins 0–3 → 0–100 so both lines share the same axis
+    const winsCount = log?.positives?.length ?? 0;
+    const winsScaled = Math.round((winsCount / 3) * 100);
     return {
       date: format(subDays(new Date(), (chartDays - 1) - i), 'MMM dd'),
-      regret: Math.round(avgRegret)
+      regret: Math.round(avgRegret),
+      wins: log ? winsScaled : 0,
     };
   });
 
@@ -352,12 +356,12 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
 
       {/* Grid of Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Regret Decay Chart */}
-        <div className="retro-card h-[300px] md:h-[350px] flex flex-col relative overflow-hidden">
-          <div className="flex justify-between items-center mb-4">
+        {/* Balance Chart */}
+        <div className="retro-card h-[320px] md:h-[370px] flex flex-col relative overflow-hidden">
+          <div className="flex justify-between items-center mb-2">
             <h3 className="text-lg md:text-xl font-display flex items-center gap-2">
               <TrendingDown className="w-5 h-5 text-brand-purple" />
-              Regret Decay (30d)
+              Balance (30d)
             </h3>
             <button
               onClick={() => setShowDecayInfo(v => !v)}
@@ -365,6 +369,18 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
             >
               <HelpCircle className="w-4 h-4" />
             </button>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-4 mb-3">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-brand-purple" />
+              <span className="text-[10px] font-bold text-black/50 uppercase tracking-wider">Regret</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-emerald-500" />
+              <span className="text-[10px] font-bold text-black/50 uppercase tracking-wider">Wins</span>
+            </div>
           </div>
 
           <AnimatePresence>
@@ -382,12 +398,12 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
                 >
                   <XIcon className="w-3 h-3 text-black/40" />
                 </button>
-                <p className="font-bold text-brand-purple mb-1 text-xs uppercase tracking-wider">What is Regret Decay?</p>
-                <p>This chart tracks your average regret intensity over the past 30 days. As you reflect and grow, the line should trend downward — meaning you're either making fewer regrettable decisions or feeling less intensely about past ones. A declining curve is progress.</p>
+                <p className="font-bold text-brand-purple mb-1 text-xs uppercase tracking-wider">What is this?</p>
+                <p>Tracks your regret intensity vs wins logged over 30 days. When the green line rises and the purple line falls, you're in a good place. Both on the same 0–100 scale.</p>
               </motion.div>
             )}
           </AnimatePresence>
-          
+
           <div className="flex-1 w-full opacity-90 relative">
             {logs.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -397,40 +413,58 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
                       <stop offset="5%" stopColor="#4C22ED" stopOpacity={0.3}/>
                       <stop offset="95%" stopColor="#4C22ED" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="winsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.35}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10 }} 
+                  <XAxis
+                    dataKey="date"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 10 }}
                     interval={6}
                   />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} domain={[0, 100]} />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#fff', 
-                      border: '4px solid #000', 
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#fff',
+                      border: '4px solid #000',
                       borderRadius: '12px',
                       fontFamily: 'Fredoka',
                       fontSize: '12px',
                       boxShadow: '4px 4px 0px rgba(0,0,0,1)'
-                    }} 
+                    }}
+                    formatter={(value: number, name: string) => [
+                      `${value}%`,
+                      name === 'regret' ? 'Regret' : 'Wins'
+                    ]}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="regret" 
-                    stroke="#4C22ED" 
-                    strokeWidth={4} 
-                    fillOpacity={1} 
+                  <Area
+                    type="monotone"
+                    dataKey="wins"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#winsGradient)"
+                    dot={false}
+                    activeDot={{ r: 5, fill: '#10b981', stroke: '#000', strokeWidth: 2 }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="regret"
+                    stroke="#4C22ED"
+                    strokeWidth={3}
+                    fillOpacity={1}
                     fill="url(#regretGradient)"
-                    dot={false} 
-                    activeDot={{ r: 6, fill: '#F310F6', stroke: '#000', strokeWidth: 2 }}
+                    dot={false}
+                    activeDot={{ r: 5, fill: '#F310F6', stroke: '#000', strokeWidth: 2 }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyStateIllustration 
+              <EmptyStateIllustration
                 icon={BarChart3}
                 title="Waiting for Data"
                 description="Your regret decay chart will appear here once you start logging rituals."
