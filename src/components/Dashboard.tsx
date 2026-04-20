@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  TrendingDown, 
-  AlertTriangle, 
-  Calendar, 
-  PieChart as PieChartIcon, 
+import {
+  TrendingDown,
+  AlertTriangle,
+  Calendar,
+  PieChart as PieChartIcon,
   ArrowRight,
   Zap,
   Flame,
@@ -19,7 +19,8 @@ import {
   Activity,
   Award,
   HelpCircle,
-  X as XIcon
+  X as XIcon,
+  Star,
 } from 'lucide-react';
 import { 
   AreaChart,
@@ -190,6 +191,17 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
       return null;
     })() : null;
 
+    // Top positive category
+    const positivesByCategory = logs.reduce((acc, log) => {
+      (log.positives || []).forEach(p => {
+        acc[p.category] = (acc[p.category] || 0) + 1;
+      });
+      return acc;
+    }, {} as Record<string, number>);
+
+    const topPositiveCategory = Object.entries(positivesByCategory)
+      .sort((a, b) => b[1] - a[1])[0];
+
     return {
       topRegret: topRegret && topRegret.avg > 40 ? {
         category: topRegret.name,
@@ -197,9 +209,13 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
         message: `Next time you're about to make a ${topRegret.name.toLowerCase()} decision, remember that these tend to stay with you longer (avg. ${Math.round(topRegret.avg)}% regret). Worth a second thought?`
       } : null,
       worstDay: worstDay && worstDay.avg > 30 ? worstDay : null,
-      moodCorrelation
+      moodCorrelation,
+      topPositiveCategory: topPositiveCategory ? { name: topPositiveCategory[0], count: topPositiveCategory[1] } : null,
     };
   }, [logs]);
+
+  // Total wins logged
+  const totalWins = logs.reduce((sum, log) => sum + (log.positives?.length || 0), 0);
 
   if (logs.length === 0) {
     return (
@@ -272,7 +288,7 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
           </motion.div>
 
           {/* Streak */}
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.1 }}
@@ -287,6 +303,22 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
             <div className="min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none truncate">Current Streak</p>
               <p className="text-xl font-display leading-tight truncate">{streak} {streak === 1 ? 'Day' : 'Days'}</p>
+            </div>
+          </motion.div>
+
+          {/* Wins */}
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="flex-1 flex items-center gap-3 bg-emerald-50 border-4 border-black p-3 rounded-2xl shadow-retro-sm"
+          >
+            <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 border-black shrink-0 bg-emerald-200">
+              <Sun className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-black/40 leading-none truncate">Wins Logged</p>
+              <p className="text-xl font-display leading-tight truncate">{totalWins}</p>
             </div>
           </motion.div>
         </div>
@@ -562,6 +594,24 @@ export default function Dashboard({ logs, onCheckIn }: DashboardProps) {
                 <BrainCircuit className="w-8 h-8 text-black/20 mx-auto" />
                 <p className="font-bold text-black/40">Mood Link</p>
                 <p className="text-xs text-black/40">Log 4+ rituals to see mood correlations.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="retro-card bg-emerald-50 border-dashed min-h-[180px] flex flex-col items-center justify-center text-center">
+            {insights?.topPositiveCategory ? (
+              <>
+                <Star className="w-8 h-8 text-emerald-500 mb-2" />
+                <p className="font-bold text-lg">{insights.topPositiveCategory.name}</p>
+                <p className="text-sm text-black/70">
+                  Your top bright spot category with {insights.topPositiveCategory.count} {insights.topPositiveCategory.count === 1 ? 'win' : 'wins'} logged.
+                </p>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <Sun className="w-8 h-8 text-emerald-300 mx-auto" />
+                <p className="font-bold text-black/40">Bright Spots</p>
+                <p className="text-xs text-black/40">Log some wins to see your top positive category.</p>
               </div>
             )}
           </div>

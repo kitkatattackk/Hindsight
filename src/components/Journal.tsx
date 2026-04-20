@@ -13,7 +13,8 @@ import {
   Edit2,
   Search,
   Trash2,
-  X as XIcon
+  X as XIcon,
+  Sun,
 } from 'lucide-react';
 import { DayLog, Category, Decision } from '../types';
 import { format, parseISO } from 'date-fns';
@@ -170,6 +171,35 @@ export default function Journal({ logs, onUpdateLog, onDeleteLog }: JournalProps
                   )}
                 </div>
               </div>
+
+              {/* Positives */}
+              {log.positives && log.positives.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 flex items-center gap-1">
+                    <Sun className="w-3 h-3" /> Today's Wins
+                  </p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {log.positives.map(p => (
+                      <div key={p.id} className="flex items-center gap-3 bg-emerald-50 border-2 border-emerald-200 rounded-2xl px-4 py-3">
+                        <Sun className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm">{p.text}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-black/50">{p.category}</span>
+                            <span className="text-[10px] font-bold text-black/30">·</span>
+                            <span className={`text-[10px] font-bold ${
+                              p.vibe < 40 ? 'text-emerald-600' :
+                              p.vibe < 70 ? 'text-yellow-600' : 'text-pink-600'
+                            }`}>
+                              {p.vibe < 40 ? 'Small win' : p.vibe < 70 ? 'Pretty good' : 'Amazing!'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4">
                 {log.decisions.map((decision) => (

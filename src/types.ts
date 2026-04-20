@@ -13,11 +13,20 @@ export interface Decision {
   timestamp: number;
 }
 
+export interface Positive {
+  id: string;
+  text: string;
+  category: Category;
+  vibe: number; // 0-100 (20 = small win, 55 = pretty good, 85 = amazing)
+  timestamp: number;
+}
+
 export interface DayLog {
   id: string;
   date: string; // ISO format
   moodScore: number; // 1-5
   decisions: Decision[];
+  positives?: Positive[];
 }
 
 export interface CategoryReminder {
