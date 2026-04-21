@@ -12,6 +12,7 @@ import {
   Smile,
   Frown,
   Meh,
+  Sun,
 } from 'lucide-react';
 import { DayLog } from '../types';
 import { format, startOfWeek, endOfWeek, subWeeks, isWithinInterval, parseISO, eachDayOfInterval } from 'date-fns';
@@ -35,6 +36,7 @@ interface WeekStats {
   topCategory: string | null;
   toughestDay: string | null;
   totalDecisions: number;
+  totalWins: number;
   daysCheckedIn: number;
 }
 
@@ -80,6 +82,8 @@ function getWeekStats(weekOffset: number, allLogs: DayLog[]): WeekStats {
     ? Object.entries(dayRegret).sort((a, b) => b[1] - a[1])[0][0]
     : null;
 
+  const totalWins = weekLogs.reduce((sum, l) => sum + (l.positives?.length ?? 0), 0);
+
   return {
     weekStart,
     weekEnd,
@@ -89,6 +93,7 @@ function getWeekStats(weekOffset: number, allLogs: DayLog[]): WeekStats {
     topCategory,
     toughestDay,
     totalDecisions: allDecisions.length,
+    totalWins,
     daysCheckedIn: weekLogs.length,
   };
 }
@@ -279,6 +284,30 @@ export default function WeeklyDigest({ logs }: WeeklyDigestProps) {
                 </div>
               </div>
 
+              {/* Wins this week */}
+              <div className="bg-emerald-50 rounded-xl border-2 border-black p-3 mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sun className="w-5 h-5 text-emerald-500" />
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-black/50">Wins This Week</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-display text-emerald-600">{current.totalWins}</p>
+                  {current.totalWins > 0 && (
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: Math.min(current.totalWins, 5) }).map((_, i) => (
+                        <div key={i} className="w-2 h-2 rounded-full bg-emerald-400 border border-black" />
+                      ))}
+                      {current.totalWins > 5 && (
+                        <span className="text-[10px] font-bold text-emerald-500 ml-0.5">+{current.totalWins - 5}</span>
+                      )}
+                    </div>
+                  )}
+                  {current.totalWins === 0 && (
+                    <span className="text-[10px] text-black/30 font-medium">Log some wins!</span>
+                  )}
+                </div>
+              </div>
+
               {/* Narrative */}
               <div className="bg-brand-purple text-white rounded-xl border-2 border-black p-3">
                 <p className="text-xs font-bold uppercase tracking-wider text-white/60 mb-1">Molly's Take</p>
@@ -286,8 +315,11 @@ export default function WeeklyDigest({ logs }: WeeklyDigestProps) {
                   {current.daysCheckedIn >= 5
                     ? `Solid week — you checked in ${current.daysCheckedIn} out of 7 days. `
                     : `You checked in ${current.daysCheckedIn} day${current.daysCheckedIn !== 1 ? 's' : ''} this week. Consistency is key! `}
+                  {current.totalWins > 0
+                    ? `You logged ${current.totalWins} win${current.totalWins !== 1 ? 's' : ''} — don't forget to celebrate those. `
+                    : 'Try logging some wins next week — the good stuff matters too. '}
                   {regretDelta !== null && regretDelta < -5
-                    ? `Your regret is down ${Math.abs(regretDelta)}% vs last week — real growth. `
+                    ? `Regret is down ${Math.abs(regretDelta)}% vs last week — real growth. `
                     : regretDelta !== null && regretDelta > 10
                     ? `Regret crept up ${regretDelta}% this week. ${current.topCategory ? `Watch those ${current.topCategory.toLowerCase()} decisions.` : ''} `
                     : current.topCategory
